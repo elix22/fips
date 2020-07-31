@@ -77,9 +77,9 @@ endmacro()
 #
 macro(fips_config_postfixes_for_exe target)
     if (FIPS_EMSCRIPTEN)
-        set_target_properties(${target} PROPERTIES RELEASE_POSTFIX .html)
-        set_target_properties(${target} PROPERTIES DEBUG_POSTFIX .html)
-        set_target_properties(${target} PROPERTIES PROFILING_POSTFIX .html)
+        set_target_properties(${target} PROPERTIES RELEASE_POSTFIX ${FIPS_EMSCRIPTEN_POSTFIX})
+        set_target_properties(${target} PROPERTIES DEBUG_POSTFIX ${FIPS_EMSCRIPTEN_POSTFIX})
+        set_target_properties(${target} PROPERTIES PROFILING_POSTFIX ${FIPS_EMSCRIPTEN_POSTFIX})
     endif()
 endmacro(fips_config_postfixes_for_exe)
 
@@ -89,7 +89,7 @@ endmacro(fips_config_postfixes_for_exe)
 #
 function(fips_config_output_directory target)
     if (NOT FIPS_ANDROID)
-        set(dir ${FIPS_DEPLOY_DIR}/${FIPS_PROJECT_NAME}/${FIPS_CONFIG})
+        set(dir ${FIPS_PROJECT_DEPLOY_DIR})
 
         # exes
         set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${dir})
@@ -115,7 +115,7 @@ endfunction()
 
 #-------------------------------------------------------------------------------
 #   fips_addto_targets_list(target type)
-#   Adds a new entry to the targets type list, this is called from 
+#   Adds a new entry to the targets type list, this is called from
 #   the fips_end_xxx() functions.
 #
 function(fips_addto_targets_list target type)
@@ -225,8 +225,9 @@ macro(fips_add_file new_file)
         else()
             set(cur_file ${new_file})
         endif()
+        # NOTE: this should be LAST_EXT, but that's only supported since cmake 3.14
         get_filename_component(f_ext ${cur_file} EXT)
-        
+
         # determine source group name and
         # add to current source group
         source_group("${CurGroup}" FILES ${cur_file})
@@ -236,6 +237,7 @@ macro(fips_add_file new_file)
             if (${f_ext} STREQUAL ".m")
                 set_source_files_properties(${cur_file} PROPERTIES LANGUAGE C)
             endif()
+
             # handle plist files special
             if (${f_ext} STREQUAL ".plist")
                 set(FIPS_OSX_PLIST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${cur_file}")
