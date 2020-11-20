@@ -6,7 +6,7 @@ import subprocess
 import yaml
 
 from mod import log, util, config, dep, template, settings, android, emsdk
-from mod.tools import git, cmake, make, ninja, xcodebuild, xcrun, ccmake, cmake_gui, vscode, clion
+from mod.tools import git, cmake, make, ninja, xcodebuild, xcrun, ccmake, cmake_gui, vscode, clion, httpserver
 
 #-------------------------------------------------------------------------------
 def init(fips_dir, proj_name) :
@@ -306,31 +306,11 @@ def run(fips_dir, proj_dir, cfg_name, target_name, target_args, target_cwd) :
             if not target_cwd :
                 target_cwd = deploy_dir
 
+            cmd_line = None
             if cfg['platform'] == 'emscripten':
                 # special case: emscripten app
-                html_name = target_name + '.html'
-                if util.get_host_platform() == 'osx' :
-                    try :
-                        subprocess.call(
-                            'open http://localhost:8080/{} ; http-server -c-1 -g'.format(html_name),
-                            cwd = target_cwd, shell=True)
-                    except KeyboardInterrupt :
-                        return 0
-                elif util.get_host_platform() == 'win' :
-                    try :
-                        cmd = 'cmd /c start http://localhost:8080/{} && http-server -c-1 -g'.format(html_name)
-                        subprocess.call(cmd, cwd = target_cwd, shell=True)
-                    except KeyboardInterrupt :
-                        return 0
-                elif util.get_host_platform() == 'linux' :
-                    try :
-                        subprocess.call(
-                            'xdg-open http://localhost:8080/{}; http-server -c-1 -g'.format(html_name),
-                            cwd = target_cwd, shell=True)
-                    except KeyboardInterrupt :
-                        return 0
-                else :
-                    log.error("don't know how to start HTML app on this platform")
+                httpserver.run(fips_dir, proj_dir, target_name, target_cwd)
+                return 0
             elif cfg['platform'] == 'android' :
                 try :
                     adb_path = android.get_adb_path(fips_dir)
@@ -347,7 +327,6 @@ def run(fips_dir, proj_dir, cfg_name, target_name, target_args, target_cwd) :
                     return 0
                 except KeyboardInterrupt :
                     return 0
-
             elif os.path.isdir('{}/{}.app'.format(deploy_dir, target_name)) :
                 # special case: Mac app
                 cmd_line = '{}/{}.app/Contents/MacOS/{}'.format(deploy_dir, target_name, target_name)
